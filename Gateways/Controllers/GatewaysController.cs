@@ -20,18 +20,16 @@ namespace Gateways.Controllers
             _context = context;
         }
 
-        // GET: api/Gateway
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Gateway>>> GetTodoItems()
+        public async Task<ActionResult<IEnumerable<Gateway>>> GetGateways()
         {
-            return await _context.TodoItems.ToListAsync();
+            return await _context.Gateways.Include(g => g.Devices).ToListAsync();
         }
 
-        // GET: api/Gateway/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Gateway>> GetGateway(string id)
         {
-            var gateway = await _context.TodoItems.FindAsync(id);
+            var gateway = await _context.Gateways.Include(g => g.Devices).FirstOrDefaultAsync(g => g.SerialNumber == id);
 
             if (gateway == null)
             {
@@ -41,9 +39,6 @@ namespace Gateways.Controllers
             return gateway;
         }
 
-        // PUT: api/Gateway/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
         public async Task<IActionResult> PutGateway(string id, Gateway gateway)
         {
@@ -73,13 +68,10 @@ namespace Gateways.Controllers
             return NoContent();
         }
 
-        // POST: api/Gateway
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
         public async Task<ActionResult<Gateway>> PostGateway(Gateway gateway)
         {
-            _context.TodoItems.Add(gateway);
+            _context.Gateways.Add(gateway);
             try
             {
                 await _context.SaveChangesAsync();
@@ -99,17 +91,59 @@ namespace Gateways.Controllers
             return CreatedAtAction("GetGateway", new { id = gateway.SerialNumber }, gateway);
         }
 
-        // DELETE: api/Gateway/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<Gateway>> DeleteGateway(string id)
         {
-            var gateway = await _context.TodoItems.FindAsync(id);
+            var gateway = await _context.Gateways.FindAsync(id);
             if (gateway == null)
             {
                 return NotFound();
             }
 
-            _context.TodoItems.Remove(gateway);
+            _context.Gateways.Remove(gateway);
+            await _context.SaveChangesAsync();
+
+            return gateway;
+        }
+
+        [HttpPost("{id}/device")]
+        public async Task<ActionResult<Gateway>> PostGatewayDevice(string id, Device device)
+        {
+            var gateway = await _context.Gateways.Include(g => g.Devices).FirstOrDefaultAsync(g => g.SerialNumber == id);
+
+            if (gateway == null)
+            {
+                return NotFound();
+            }
+
+            if(gateway.Devices.FirstOrDefault(d => d.UUID == device.UUID) != null)
+            {
+                return Conflict();
+            }
+
+            _context.Add(device);
+            gateway.Devices.Add(device);
+            _context.Entry(gateway).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetGateway", new { id = gateway.SerialNumber }, gateway);
+        }
+
+        [HttpDelete("{id}/device/{uuid}")]
+        public async Task<ActionResult<Gateway>> DeleteGatewayDevice(string id, long uuid)
+        {
+            var gateway = await _context.Gateways.Include(g => g.Devices).FirstOrDefaultAsync(g => g.SerialNumber == id);
+            if (gateway == null)
+            {
+                return NotFound();
+            }
+
+            var device = gateway.Devices.FirstOrDefault(d => d.UUID == uuid);
+            if(device == null)
+            {
+                return NotFound();
+            }
+            gateway.Devices.Remove(device);
             await _context.SaveChangesAsync();
 
             return gateway;
@@ -117,7 +151,7 @@ namespace Gateways.Controllers
 
         private bool GatewayExists(string id)
         {
-            return _context.TodoItems.Any(e => e.SerialNumber == id);
+            return _context.Gateways.Any(e => e.SerialNumber == id);
         }
     }
 }

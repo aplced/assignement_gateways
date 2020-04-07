@@ -21,7 +21,10 @@ namespace Gateways
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<GatewayContext>(opt => opt.UseInMemoryDatabase("Gateways"));
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options => {
+                options.JsonSerializerOptions.Converters.Add(new Converters.DateTimeConverter());
+                options.JsonSerializerOptions.Converters.Add(new Converters.DeviceStatusConverter());
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -32,11 +35,11 @@ namespace Gateways
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 
-            app.UseAuthorization();
+            //app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

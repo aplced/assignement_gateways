@@ -9,6 +9,6 @@ namespace Gateways.Models
         {
         }
 
-        public DbSet<Gateway> TodoItems { get; set; }
+        public DbSet<Gateway> Gateways { get; set; }
     }
 }

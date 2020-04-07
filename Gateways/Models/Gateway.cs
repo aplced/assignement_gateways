@@ -15,7 +15,7 @@ namespace Gateways.Models
         [CustomValidation(typeof(Gateway), "ValidateIPv4")]
         public string IPv4 { get; set; }
         [MaxLength(10)]
-        public List<Device> Devices { get; set; }
+        public ICollection<Device> Devices { get; set; }
 
         public static ValidationResult ValidateIPv4(string x, ValidationContext context)
         {
@@ -23,7 +23,7 @@ namespace Gateways.Models
 
             try
             {
-                validationResult = IPAddress.TryParse(x, out IPAddress addr) ? ValidationResult.Success : new ValidationResult("{x} is not a valid IPv4 address");
+                validationResult = IPAddress.TryParse(x, out IPAddress addr) ? ValidationResult.Success : new ValidationResult($"{x} is not a valid IPv4 address");
             }
             catch(ArgumentNullException ex)
             {
