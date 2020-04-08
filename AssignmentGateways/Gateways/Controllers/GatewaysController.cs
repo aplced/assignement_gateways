@@ -69,14 +69,14 @@ namespace Gateways.Controllers
         [HttpPost]
         public async Task<ActionResult<Gateway>> PostGateway(Gateway gateway)
         {
-            _context.Gateways.Add(gateway);
             try
             {
+                _context.Gateways.Add(gateway);
                 await _context.SaveChangesAsync();
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                if (GatewayExists(gateway.SerialNumber))
+                if (GatewayExists(gateway.SerialNumber) || ex.GetType() == typeof(System.InvalidOperationException))
                 {
                     return Conflict();
                 }
@@ -112,6 +112,11 @@ namespace Gateways.Controllers
             if (gateway == null)
             {
                 return NotFound();
+            }
+
+            if(gateway.Devices.Count > 9)
+            {
+                return Conflict();
             }
 
             if(gateway.Devices.FirstOrDefault(d => d.UUID == device.UUID) != null)

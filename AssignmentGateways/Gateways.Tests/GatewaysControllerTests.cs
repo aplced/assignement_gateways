@@ -10,7 +10,8 @@ namespace Gateways.Tests
 {
     public class GatewaysControllerTests
     {
-        private readonly GatewaysController gatewaysController;
+        private GatewaysController gatewaysController;
+        private GatewayContext gatewayContext;
         //This mock is not actually being used as mocking the entire context is actually a lot harder than setting up and using
         //an in memory real one. Even though this goes into the realm of integration tests I am going to use it as a unit test.
         //private readonly Mock<Gateways.Models.GatewayContext> gatewayContextMock = new Mock<Gateways.Models.GatewayContext>();
@@ -18,8 +19,17 @@ namespace Gateways.Tests
         public GatewaysControllerTests()
         {
             var options = new DbContextOptionsBuilder<GatewayContext>().UseInMemoryDatabase("Test Gateways").Options;
-            gatewaysController = new GatewaysController(new GatewayContext(options));
+            gatewayContext = new GatewayContext(options);
+            gatewaysController = new GatewaysController(gatewayContext);
         }
+
+        public void Dispose()
+        {
+            gatewaysController = null;
+            gatewayContext.Dispose();
+            gatewayContext = null;
+        }
+        
         
         [Fact]
         public async void GettingGatewaysReturnsNoGateways()
@@ -59,20 +69,6 @@ namespace Gateways.Tests
             
             Assert.True(gatewayResult.Result.GetType() == typeof(Microsoft.AspNetCore.Mvc.ConflictResult));
             Assert.True(((Microsoft.AspNetCore.Mvc.ConflictResult)gatewayResult.Result).StatusCode == 409);
-        }
-
-        [Fact]
-        public async void IPv4FieldIsValidated()
-        {
-            var gateway = new Gateway(){
-                IPv4 = "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-                SerialNumber = "0000",
-                Name = "No name"
-            };
-            ActionResult<Gateway> gatewayResult = await gatewaysController.PostGateway(gateway);
-
-            //Since equals is not overriden assuming serial number is enough for the test purposes
-            Assert.True(gatewayResult.Value.SerialNumber == gateway.SerialNumber);
-        }
+        }       
     }
 }
